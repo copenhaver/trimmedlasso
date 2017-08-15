@@ -76,6 +76,6 @@ If you would like to cite this work, please use the following citation for BCM17
   author  = {Dimitris Bertsimas and Martin S. Copenhaver and Rahul Mazumder},
   title   = {The Trimmed Lasso: Sparsity and Robustness},
   year    = {2017},
-  url     = {http://arxiv.org/abs/***}
+  url     = {http://www.optimization-online.org/DB_HTML/2017/08/6167.html}
 }
 ```
