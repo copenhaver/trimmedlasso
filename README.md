@@ -60,7 +60,7 @@ We provide implementations of the above algorithms in several languages:
 
   This implementation is the most complete and contains all of the algorithms above. The choice of `julia` is ideal for our purposes because of its flexibility in terms of optimization solvers using [JuMP](https://github.com/JuliaOpt/JuMP.jl). This implementation is also the most flexible: you can use open-source or commercial solvers for the integer programming problems, and you can specify your desired solver for usual Lasso problems (we include a basic implementation).
 
-2. [MATLAB](./matlab/)
+2. [MATLAB](./MATLAB/)
 
      This implementation is the most high-level. As such, it relies heavily on [`cvx`](https://cvxr.com/cvx/ "CVX") and [`Gurobi`](http://www.gurobi.com).
 
