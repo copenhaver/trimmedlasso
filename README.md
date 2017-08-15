@@ -19,7 +19,7 @@ for parameter λ > 0. One of the advantages of the former approach over the latt
 
 ### Our approach
 
-This page contains several sample implementations of an estimation procedure for sparse modeling as described in [Bertsimas, Copenhaver, and Mazumder, "The Trimmed Lasso: Sparsity and Robustness", arXiv preprint ("BCM17")](http://www.optimization-online.org/DB_HTML/2017/08/6167.html).
+This page contains several sample implementations of an estimation procedure for sparse modeling as described in [Bertsimas, Copenhaver, and Mazumder, "The Trimmed Lasso: Sparsity and Robustness", preprint ("BCM17")](http://www.optimization-online.org/DB_HTML/2017/08/6167.html).
 
 The problem that we focus on is as follows:
 ```
