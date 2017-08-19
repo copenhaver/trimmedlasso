@@ -1,5 +1,6 @@
 %%%
-% A MATLAB implementation of algorithms from BCM17
+% A MATLAB implementation of exact algorithm from BCM17
+% for solving trimmed Lasso problem
 % Written by Martin S. Copenhaver (www.mit.edu/~mcopen)
 %%%
 

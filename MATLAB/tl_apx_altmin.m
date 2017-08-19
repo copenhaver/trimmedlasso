@@ -1,5 +1,5 @@
 %%%
-% A MATLAB implementation of algorithms from BCM17
+% A MATLAB implementation of Algorithm 1 from BCM17
 % Written by Martin S. Copenhaver (www.mit.edu/~mcopen)
 %%%
 

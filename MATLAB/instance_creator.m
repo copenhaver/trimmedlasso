@@ -1,6 +1,4 @@
-
-% A demo of julia implementation of algorithms from BCM17
-% (as contained in code.jl)
+% Creates problem instances for use in the demo (demo.m)
 % Written by Martin S. Copenhaver (www.mit.edu/~mcopen)
 
 function [y, X, beta0] = instance_creator(n,p,k,SNR,egclass)
