@@ -1,4 +1,3 @@
-
 # A demo of julia implementation of algorithms from BCM17
 # (as contained in code.jl)
 # Written by Martin S. Copenhaver (www.mit.edu/~mcopen)

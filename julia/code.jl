@@ -246,7 +246,6 @@ function tl_apx_altmin(p,k,y,X,mu,lambda,lassosolver=aux_lassobeta,max_iter=1000
 
   AM_ITER = max_iter;
   REL_TOL = rel_tol;
-  SIGMA = sigma;
   PRINT_EVERY = print_every; # AM will print output on every (PRINT_EVERY)th iteration
 
   beta = randn(p);#starter;#zeros(p);
@@ -386,16 +385,38 @@ function tl_apx_altmin(p,k,y,X,mu,lambda,lassosolver=aux_lassobeta,max_iter=1000
 end
 
 
-
-
 ### ADMM
 
+function tl_apx_admm(p,k,y,X,mu,lambda,max_iter=2000,rel_tol=1e-6,sigma=1.,print_every=200)
 
-function tl_apx_admm(p,k,y,X,mu,lambda,max_iter=2000,rel_tol=1e-6,tau=0.9,sigma=1.,print_every=200)
+  #####
+
+  # This is known as Algorithm 2 in the paper BCM17 (using augmented Lagranian and alternating direction method of multiplers, a.k.a. ADMM)
+
+  # Inputs:
+  #    data matrix `X` and response `y`
+  #    `p` is the number of columns of X (i.e., the number of features).
+  #    `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  #    `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  #    `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
+  #    `bigM` is an upper bound on the largest magnitude entry of beta. if the constraint |beta_i|<= bigM is binding at optimality, an error will be thrown, as this could mean that the value of `bigM` given may have been too small.
+  
+  # Optional arguments:
+  #    `max_iter`---default value of 2000. Maximum number of (outer) ADMM iterations for the algorithm.
+  #    `rel_tol`---default value of 1e-6. The algorithm concludes when the relative improvement (current_objective-previous_objective)/(previous_objective + .01) is less than `rel_tol`. The additional `0.01` in the denominator ensures no numerical issues.
+  #    `sigma`---default value of 1.0. This is the augmented Lagranian penalty as shown in Algorithm 2 in the paper. 
+  #    `print_every`---default value of 200. Controls amount of amount output. Set `print_every=Inf` to suppress output.
+
+  # Output: estimator beta that is a *possible* solution for the problem
+  #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
+
+  # Method: alternating minimization approach which finds heuristic solutions to the trimmed Lasso problem. See details in Algorithm 1 in BCM17.
+
+  ##### 
 
   ADMM_ITER = max_iter;
   REL_TOL = rel_tol;
-  TAU = tau;
+  # TAU = tau; ---> Could add the scaling parameter tau, but we will neglect to include that in our implementation
   SIGMA = sigma;
   PRINT_EVERY = print_every; # AM will print output on every (PRINT_EVERY)th iteration
 
@@ -464,15 +485,32 @@ function tl_apx_admm(p,k,y,X,mu,lambda,max_iter=2000,rel_tol=1e-6,tau=0.9,sigma=
 
 end
 
-
-
-
-
-
-
 ### convex envelope
 
 function tl_apx_envelope(p,k,y,X,mu,lambda,solver)
+
+  #####
+
+  # Inputs:
+  #    data matrix `X` and response `y`
+  #    `p` is the number of columns of X (i.e., the number of features).
+  #    `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  #    `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  #    `solver` is the desired linear optimization solver.
+  
+  # Optional arguments: none
+
+  # Output: estimator beta that is a *possible* solution for the problem
+  #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
+  # beta is found by solving (to optimality) the following linear optimization problem:
+  #         minimize_{e,β}    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*e
+  #         subject to        e >= 0;
+  #                           e >= sum_i |β_i| - k;
+  # As discussed in BCM17, this is the convex relaxation of the first problem when using convex envelopes.
+
+  # Method: alternating minimization approach which finds heuristic solutions to the trimmed Lasso problem. See details in Algorithm 1 in BCM17.
+
+  ##### 
 
   m = Model(solver = solver);
 
@@ -495,6 +533,3 @@ function tl_apx_envelope(p,k,y,X,mu,lambda,solver)
   return getvalue(beta);
 
 end
-
-
-

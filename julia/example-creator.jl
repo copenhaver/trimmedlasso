@@ -1,18 +1,13 @@
 
-# A demo of julia implementation of algorithms from BCM17
-# (as contained in code.jl)
+# Instance creator for use in demo.jl.
 # Written by Martin S. Copenhaver (www.mit.edu/~mcopen)
 
 
 ##########################
-## Imports packages    ##
+## Import packages      ##
 ##########################
 
 using Distributions
-
-
-
-
 
 function instance_creator(n,p,k,SNR,egclass,seed=1)
 
@@ -23,8 +18,7 @@ function instance_creator(n,p,k,SNR,egclass,seed=1)
 
   if egclass == 1
     rho = 0.8;
-    ir = round(p/10);
-    println("WARNING: PREVIOUS LINE SHOULD BE p/k. FIX.")
+    ir = round(p/k);
     for i=1:p
       if i%ir == 1 # then beta0[i] = 1
         beta0[i] = 1;
