@@ -3,12 +3,10 @@
 
 
 ##########################
-## Imports packages    ##
+## Import packages    ##
 ##########################
 
-using JuMP, Gurobi, Distributions, Mosek, SCS
-
-
+using JuMP
 
 
 ##################################
@@ -27,8 +25,6 @@ function aux_lassobeta(n::Int,p::Int,k::Int,mu::Float64,lambda::Float64,XX::Arra
   iterl = 0;
 
   while (iterl < MAX_ITERS) && ( norm(lbc - lbp) > TOL )
-    #println(norm(lbc));
-    #println(iterl," ",norm(lbc-lbp));
 
     lbp = lbc;
 
@@ -41,7 +37,6 @@ function aux_lassobeta(n::Int,p::Int,k::Int,mu::Float64,lambda::Float64,XX::Arra
     iterl = iterl + 1;
 
   end
-  #println(iterl);#, " ",norm(lbc));
 
   return(lbc);
 end
@@ -59,8 +54,6 @@ function aux_admmwrtbeta(n::Int,p::Int,k::Int,mu::Float64,lambda::Float64,XX::Ar
   iterl = 0;
 
   while (iterl < MAX_ITERS) && ( norm(lbc - lbp) > TOL )
-    #println(norm(lbc));
-    #println(iterl," ",norm(lbc-lbp));
 
     lbp = lbc;
 
@@ -73,7 +66,6 @@ function aux_admmwrtbeta(n::Int,p::Int,k::Int,mu::Float64,lambda::Float64,XX::Ar
     iterl = iterl + 1;
 
   end
-  #println(iterl);#, " ",norm(lbc));
 
   return(lbc);
 end
@@ -87,19 +79,20 @@ end
 ### SOS-1 formulation
 
 function tl_exact(p,k,y,X,mu,lambda,solver)
+  #####
 
-  # Input: a covariance matrix S and the desired number of factors to perform factor analysis.
-  # Other parameters: optimal algorithmic parameters with defaults
-  # Output: decomposition S = T + P + N, where T is positive-semidefinite (PSD) with rank <= factors,
-  #         P is diagonal and PSD, and N is PSD (N is the "noise" component)
-  
-  ### algorithmic parameters:
-  # maxiter.* : maximum number of * iterations 
-  # rho : scaling parameter in ADMM
-  # tol.* : * optimality tolerance
-  
-  # verify that S is indeed a matrix
-  
+  # Input: data matrix X and response y. `p` is the number of columns of X (i.e., the number of features).
+  # `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  # `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  # `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
+
+  # Output: estimator beta that is optimal to the problem
+  #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
+
+  # Method: exact approach using SOS-1 constraints and mixed integer optimization (e.g. using commercial solver Gurobi)
+
+  #####  
+ 
   if ( p != size(X)[2] )
     println("Specified p is not equal to row dimension of X. Halting execution.");
     return;
@@ -136,6 +129,24 @@ end
 ### big-M formulation
 
 function tl_exact_bigM(p,k,y,X,mu,lambda,solver,bigM,throwbinding=true)
+  #####
+
+  # Input: data matrix X and response y.
+  # `p` is the number of columns of X (i.e., the number of features).
+  # `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  # `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  # `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
+  # `bigM` is an upper bound on the largest magnitude entry of beta. if the constraint |beta_i|<= bigM is binding at optimality, an error will be thrown, as this could mean that the value of `bigM` given may have been too small.
+  # Optional argument: `throwbinding`---default value of `true`. To disable the built-in error functionality that occurs when the `bigM` value is potentially too small, set `throwbinding=false`.
+
+  # Output: estimator beta that is optimal to the problem
+  #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
+
+  # Method: exact approach using bigM constraints and mixed integer optimization (e.g. using commercial solver Gurobi)
+  # Because bigM formulations are more easily used by solvers, this approach is much easier to use if you have a specific preference on which solver you use. However, note that the performance of this approach, much like the performance of solvers for any big-M-based optimization problem, is highly dependent upon tuning of the value of M. Therefore, if you do not have a good sense of what value to set for M and you have access to a solver that handles SOS-1 constraints, we recommend using the SOS-1-based approach (given in function tl_exact )
+
+  #####  
+
   if ( p != size(X)[2] )
     println("Specified p is not equal to row dimension of X. Halting execution.");
     return;
