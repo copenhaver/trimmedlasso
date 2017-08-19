@@ -81,11 +81,15 @@ end
 function tl_exact(p,k,y,X,mu,lambda,solver)
   #####
 
-  # Input: data matrix X and response y. `p` is the number of columns of X (i.e., the number of features).
-  # `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
-  # `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
-  # `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
-
+  # Inputs (required arguments):
+  #    data matrix `X` and response `y`
+  #    `p` is the number of columns of X (i.e., the number of features).
+  #    `k` is the sparsity parameter on the trimmed Lasso
+  #    `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  #    `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  #    `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
+  #    `bigM` is an upper bound on the largest magnitude entry of beta. if the constraint |beta_i|<= bigM is binding at optimality, an error will be thrown, as this could mean that the value of `bigM` given may have been too small.
+  
   # Output: estimator beta that is optimal to the problem
   #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
 
@@ -131,13 +135,17 @@ end
 function tl_exact_bigM(p,k,y,X,mu,lambda,solver,bigM,throwbinding=true)
   #####
 
-  # Input: data matrix X and response y.
-  # `p` is the number of columns of X (i.e., the number of features).
-  # `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
-  # `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
-  # `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
-  # `bigM` is an upper bound on the largest magnitude entry of beta. if the constraint |beta_i|<= bigM is binding at optimality, an error will be thrown, as this could mean that the value of `bigM` given may have been too small.
-  # Optional argument: `throwbinding`---default value of `true`. To disable the built-in error functionality that occurs when the `bigM` value is potentially too small, set `throwbinding=false`.
+  # Inputs (required arguments):
+  #    data matrix `X` and response `y`
+  #    `p` is the number of columns of X (i.e., the number of features).
+  #    `k` is the sparsity parameter on the trimmed Lasso
+  #    `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  #    `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  #    `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
+  #    `bigM` is an upper bound on the largest magnitude entry of beta. if the constraint |beta_i|<= bigM is binding at optimality, an error will be thrown, as this could mean that the value of `bigM` given may have been too small.
+  
+  # Optional arguments:
+  #    `throwbinding`---default value of `true`. To disable the built-in error functionality that occurs when the `bigM` value is potentially too small, set `throwbinding=false`.
 
   # Output: estimator beta that is optimal to the problem
   #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
@@ -198,11 +206,46 @@ end
 
 ### alternating minimization
 
-function tl_apx_altmin(p,k,y,X,mu,lambda,lassosolver=aux_lassobeta,max_iter=10000,rel_tol=1e-6,tau=0.9,sigma=5.,print_every=200)
+function tl_apx_altmin(p,k,y,X,mu,lambda,lassosolver=aux_lassobeta,max_iter=10000,rel_tol=1e-6,print_every=200)
+
+  #####
+
+  # This is known as Algorithm 1 in the paper BCM17 (using difference-of-convex optimization)
+
+  # Inputs:
+  #    data matrix `X` and response `y`
+  #    `p` is the number of columns of X (i.e., the number of features).
+  #    `mu` is the multipler on the usual Lasso penalty: mu*sum_i |beta_i|
+  #    `lambda` is the multipler on the trimmed Lasso penalty: lambda*sum_{i>k} |beta_{(i)}|
+  #    `solver` is the desired mixed integer optimization solver. This should have SOS-1 capabilities (will return error otherwise).
+  #    `bigM` is an upper bound on the largest magnitude entry of beta. if the constraint |beta_i|<= bigM is binding at optimality, an error will be thrown, as this could mean that the value of `bigM` given may have been too small.
+  
+  # Optional arguments:
+  #    `lassosolver`---default value of `aux_lassobeta`, which is a simple Lasso problem solver whose implementation is included above as an auxiliary function. If you would like to solve the Lasso subproblems using your own Lasso solver, you should change this argument. Note that the `lassosolver` values expect as function which has the following characteristics:
+  ##                 Intput arguments will be as follows: `n` - dimension of row size of `X`;
+  ##                                                      `p` - as in outer problem;
+  ##                                                      `k` - as in outer problem;
+  ##                                                      `mu` - as in outer problem;
+  ##                                                      `lambda` - as in outer problem;
+  ##                                                      `XX` - value of transpose(X)*X (can be precomputed and stored offline);
+  ##                                                      `loc_b_c` - initial value of beta from which to initial the algorithm;
+  ##                                                      `grad_rest` - the remaining part of the gradient term (-X'*y- gamma).
+  ##                  Output: solution beta to the Lasso problem
+  ##                          minimize_beta norm(y−X*beta)^2 +(mu+lambda)*sum_i |beta_i| − dot(beta,gamma) (gamma is the solution from the alternating problem, as supplied in the additional gradient information).
+  #    `max_iter`---default value of 10000. Maximum number of alternating iterations for the algorithm.
+  #    `rel_tol`---default value of 1e-6. The algorithm concludes when the relative improvement (current_objective-previous_objective)/(previous_objective + .01) is less than `rel_tol`. The additional `0.01` in the denominator ensures no numerical issues.
+  #    `print_every`---default value of 200. Controls amount of amount output. Set `print_every=Inf` to suppress output.
+
+
+  # Output: estimator beta that is a *possible* solution for the problem
+  #         minimize_β    0.5*norm(y-X*β)^2 + μ*sum_i |β_i| + λ*T_k(β)
+
+  # Method: alternating minimization approach which finds heuristic solutions to the trimmed Lasso problem. See details in Algorithm 1 in BCM17.
+
+  #####  
 
   AM_ITER = max_iter;
   REL_TOL = rel_tol;
-  TAU = tau;
   SIGMA = sigma;
   PRINT_EVERY = print_every; # AM will print output on every (PRINT_EVERY)th iteration
 
