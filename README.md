@@ -64,9 +64,6 @@ We provide implementations of the above algorithms in several languages:
 
      This implementation is the most high-level. As such, it relies heavily on [`cvx`](https://cvxr.com/cvx/ "CVX") and [`Gurobi`](http://www.gurobi.com).
 
-3. [R](./R/)
-
-
 
 ### Citation
 
