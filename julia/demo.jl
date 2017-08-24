@@ -44,7 +44,7 @@ SOLVER = GurobiSolver(OutputFlag=1); # possible options of interest: OutputFlag=
 
 # set seed for reproducibility
 
-seed(1);
+srand(1);
 
 y, X, beta0 = instance_creator(n,p,k,SNR,egclass);
 
